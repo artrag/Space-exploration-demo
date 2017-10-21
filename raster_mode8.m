@@ -22,16 +22,16 @@ end
 fclose(fid);
 
 
-[A,MAP]= imread('plasma.bmp');
-A = [A(400:400+127,400:400+255,:);A(400+127:-1:400,400:400+255,:)];
+[A,MAP]= imread('mars-volcano.bmp');
+% A = [A(400:400+127,400:400+255,:);A(400+127:-1:400,400:400+255,:)];
 figure;
 image([A;A]);
 if any(size(MAP)==0)
     [A,MAP] = rgb2ind(A,256);
 end
-[ A MAP] = imapprox(A,MAP,pal, 'nodither');
+[ A , ~] = imapprox(A,MAP,pal, 'nodither');
 fid = fopen('plasma.bin','wb');
-for i=1:min([256, size(A,1)]);
+for i=1:min([256, size(A,1)])
     fwrite(fid,A(i,:),'uint8');
 end
 fclose(fid);
@@ -45,9 +45,9 @@ colormap(MAP);
 if any(size(MAP)==0)
     [B,MAP] = rgb2ind(B,256);
 end
-[B MAP] = imapprox(B,MAP,pal, 'nodither');
+[B, MAP] = imapprox(B,MAP,pal, 'nodither');
 fid = fopen('galaxy.bin','wb');
-for i=1:min([256, size(B,1)]);
+for i=1:min([256, size(B,1)])
     fwrite(fid,B(i,:),'uint8');
 end
 fclose(fid);
