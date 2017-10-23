@@ -2,7 +2,7 @@
 
 		defpage	 0,0x4000, 0x2000		; page 0 main code 
 		defpage	 1,0x6000, 0x2000		; page 1 
-		defpage	 2..15					; swapped data 
+		defpage	 2..31					; swapped data 
 	
 		;	konami scc
 		
@@ -46,14 +46,6 @@ outvram:
 		inc	d
 		dec	e
 		jr	nz,2b
-
-		; ld de,0
-; 1:		xor a
-		; out (c),a
-		; dec de
-		; ld a,d
-		; or e
-		; jr nz,1b
 		ret
 		
 		
@@ -123,18 +115,20 @@ raster_wave:
 		
 
 		ld     	hl,raster_tab
-		ld		bc,256*103+0x9B
+		ld		b,103
 
-
-.loop:					
+.loop:
+		ld	a,(hl)
+		sub	a,e
+		inc	hl
+		ex af,af'
+		
 1:   	in     a,(#99)     ; wait for HR start  the line
 		bit    5,a        
 		jp     z,1b   
 		
-		ld	a,(hl)
-		sub	a,e
-		out	(c),a
-		inc	hl
+		ex af,af'
+		out	(#9B),a
 		djnz .loop        
 		
 		xor    a          
@@ -147,9 +141,6 @@ raster_wave:
            
 
 raster_tab:  
-		; repeat 106
-		; db -@#
-		; endrepeat
 		repeat 256
 		db (@#-256/(1+@#)) & 255
 		endrepeat
@@ -189,6 +180,6 @@ _opening:
 		incbin "galaxy.bin",0xA000,0x2000
 		page 15
 		incbin "galaxy.bin",0xC000,0x2000
-		; page 16
-		; incbin "galaxy.bin",0xE000,0x2000
+		page 16
+		incbin "galaxy.bin",0xE000,0x2000
 		
