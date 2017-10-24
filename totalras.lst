@@ -1,4 +1,4 @@
-Sjasm Z80 Assembler v0.42c - www.xl2s.tk             [2017.10.23 - 23:55:25]
+Sjasm Z80 Assembler v0.42c - www.xl2s.tk             [2017.10.24 - 08:34:03]
 
 totalras.asm
 Errors: 0
@@ -37,7 +37,7 @@ Errors: 0
       31   00:401F  21 00 00            		ld		hl,0h
       32   00:4022  CD 53 00            		call	0053h		
       33   00:4025                      
-      34   00:4025  11 0F 01            		ld		de,256*:_opening+8+7
+      34   00:4025  11 10 01            		ld		de,256*:_opening+8+8
       35   00:4028                      		
       36   00:4028                      outvram:
       37   00:4028  7A                  2:		ld	a,d

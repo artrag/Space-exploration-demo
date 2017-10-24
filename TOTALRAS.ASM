@@ -31,7 +31,7 @@ screeninit:
 		ld		hl,0h
 		call	0053h		
 
-		ld		de,256*:_opening+8+7
+		ld		de,256*:_opening+8+8
 		
 outvram:
 2:		ld	a,d
