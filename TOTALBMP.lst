@@ -1,0 +1,573 @@
+Sjasm Z80 Assembler v0.42c - www.xl2s.tk             [2017.10.24 - 21:25:17]
+
+TOTALBMP.ASM
+Errors: 0
+
+       1   00:0000                      		output "TOTALBMP.ROM"
+       2   00:0000                      
+       3   00:0000                      		defpage	 0,0x4000, 0x2000		; page 0 main code 
+       4   00:0000                      		defpage	 1,0x6000, 0x2000		; page 1 
+       5   00:0000                      		defpage	 2..31					; swapped data 
+       6   00:0000                      	
+       7   00:0000                      		;	konami scc
+       8   00:0000                      		
+       9   00:0000  (00:5000)           _kBank1:	equ 05000h ;- 57FFh (5000h used)
+      10   00:0000  (00:7000)           _kBank2: 	equ 07000h ;- 77FFh (7000h used)
+      11   00:0000  (00:9000)           _kBank3: 	equ 09000h ;- 97FFh (9000h used)
+      12   00:0000  (00:B000)           _kBank4: 	equ 0B000h ;- B7FFh (B000h used)
+      13   00:0000                      
+      14   00:0000                      			MACRO   VDP_SetReg register        ;Set value A in the specified register
+      15   00:0000                    < 			di
+      16   00:0000                    < 			out	(#99),a
+      17   00:0000                    < 			ld	a,register+128
+      18   00:0000                    < 			out	(#99),a
+      19   00:0000                    < 			ei
+      20   00:0000                    < 			ENDM	
+      21   00:0000                      
+      22   00:0000  (00)                			page 0
+      23   00:4000                      		
+      24   00:4000                      			org 4000h
+      25   00:4000                      			dw  4241h,START,0,0,0,0,0,0
+      25   00:4000  41 42 6C 40 00 00 00 00 00 00 00 00 00 00 00 00 
+      26   00:4010                      		
+      27   00:4010                      			; make happy the map guessers
+      28   00:4010  32 00 50            			ld	(_kBank1),a
+      29   00:4013  32 00 70            			ld	(_kBank2),a
+      30   00:4016  32 00 90            			ld	(_kBank3),a
+      31   00:4019  32 00 B0            			ld	(_kBank4),a
+      32   00:401C                      			
+      33   00:401C                      screeninit:
+      34   00:401C  3E 08               			ld		a,8
+      35   00:401E  CD 5F 00            			call	005fh		
+      36   00:4021                      
+      37   00:4021  F3                  			di                
+      38   00:4022  3E 0A               			ld     a,#0A      
+      39   00:4024  D3 99               			out    (#99),a    
+      40   00:4026  3E 88               			ld     a,#88      
+      41   00:4028  D3 99               			out    (#99),a  	; no sprites
+      42   00:402A                      
+      43   00:402A  3E 1F               			ld		a,#1F           
+      44   00:402C  D3 99               			out    	(#99),a    
+      45   00:402E  3E 82               			ld		a,#82
+      46   00:4030  D3 99               			out    	(#99),a    ; set page 0			
+      47   00:4032  FB                  			ei
+      48   00:4033                      
+      49   00:4033  21 00 00            			ld		hl,0h
+      50   00:4036  CD 53 00            			call	0053h		
+      51   00:4039                      
+      52   00:4039  11 10 01            			ld		de,256*:_opening+8+8
+      53   00:403C                      
+      54   00:403C  7A                  2:			ld	a,d
+      55   00:403D  32 00 70            			ld	(_kBank2),a
+      56   00:4040  21 00 60            			ld	hl,0x6000
+      57   00:4043                      			
+      58   00:4043  01 98 00            			ld	bc,0x98
+      59   00:4046  3E 20               			ld	a,32
+      60   00:4048  ED B3               1:			otir
+      61   00:404A  3D                  			dec	a
+      62   00:404B  C2 48 40            			jp	nz,1b
+      63   00:404E  14                  			inc	d
+      64   00:404F  1D                  			dec	e
+      65   00:4050  20 EA               			jr	nz,2b
+      66   00:4052  C9                  			ret
+      67   00:4053                      			
+      68   00:4053                      
+      69   00:4053                      ;
+      70   00:4053                      ;	Wait until the VDP is done copying.
+      71   00:4053                      ;
+      72   00:4053                      VDP_Ready:    
+      73   00:4053  3E 02               			ld      a,2
+      74   00:4055  F3                  			di
+      75   00:4056  D3 99               			out     (#99),a          ;select s#2
+      76   00:4058  3E 8F               			ld      a,15+128
+      77   00:405A  D3 99               			out     (#99),a
+      78   00:405C  DB 99               			in      a,(#99)
+      79   00:405E  1F                  			rra
+      80   00:405F  3E 00               			ld      a,0              ;select s#0
+      81   00:4061  D3 99               			out     (#99),a
+      82   00:4063  3E 8F               			ld      a,15+128
+      83   00:4065  FB                  			ei
+      84   00:4066  D3 99               			out     (#99),a
+      85   00:4068  DA 53 40            			jp      c,VDP_Ready
+      86   00:406B  C9                  			ret
+      87   00:406C                      			  
+      88   00:406C                      
+      89   00:406C                      		
+      90   00:406C                      START:  
+      91   00:406C  CD 1C 40            			call	screeninit
+      92   00:406F                      mode7YMMM:
+      93   00:406F  AF                  			xor a
+      94   00:4070                      			VDP_SetReg 34 	;	R34 = 0		; source page for ground
+      94   00:4070  F3                >    di
+      94   00:4071  D3 99             >    out (#99),a
+      94   00:4073  3E A2             >    ld a,register+128
+      94   00:4075  D3 99             >    out (#99),a
+      94   00:4077  FB                >    ei
+      95   00:4078  3E 01               			ld	a,1 
+      96   00:407A                      			VDP_SetReg 35 	;	R35 = 1		; source page for ground
+      96   00:407A  F3                >    di
+      96   00:407B  D3 99             >    out (#99),a
+      96   00:407D  3E A3             >    ld a,register+128
+      96   00:407F  D3 99             >    out (#99),a
+      96   00:4081  FB                >    ei
+      97   00:4082                      
+      98   00:4082  AF                  			xor 	a
+      99   00:4083                      			VDP_SetReg 36 	;	R36 = 0
+      99   00:4083  F3                >    di
+      99   00:4084  D3 99             >    out (#99),a
+      99   00:4086  3E A4             >    ld a,register+128
+      99   00:4088  D3 99             >    out (#99),a
+      99   00:408A  FB                >    ei
+     100   00:408B  AF                  			xor		a
+     101   00:408C                      			VDP_SetReg 37	;	R37 = 0		; DX = 0
+     101   00:408C  F3                >    di
+     101   00:408D  D3 99             >    out (#99),a
+     101   00:408F  3E A5             >    ld a,register+128
+     101   00:4091  D3 99             >    out (#99),a
+     101   00:4093  FB                >    ei
+     102   00:4094                      
+     103   00:4094                      
+     104   00:4094  3E 01               			ld a,1
+     105   00:4096                      			VDP_SetReg 42 	;	R42 = 1		; NYl = 1
+     105   00:4096  F3                >    di
+     105   00:4097  D3 99             >    out (#99),a
+     105   00:4099  3E AA             >    ld a,register+128
+     105   00:409B  D3 99             >    out (#99),a
+     105   00:409D  FB                >    ei
+     106   00:409E  AF                  			xor a 
+     107   00:409F                      			VDP_SetReg 43	;	R43 = 0		; NYh = 0
+     107   00:409F  F3                >    di
+     107   00:40A0  D3 99             >    out (#99),a
+     107   00:40A2  3E AB             >    ld a,register+128
+     107   00:40A4  D3 99             >    out (#99),a
+     107   00:40A6  FB                >    ei
+     108   00:40A7                      
+     109   00:40A7  AF                  			xor a
+     110   00:40A8                      			VDP_SetReg 45 	;	R45 = 0		; mode
+     110   00:40A8  F3                >    di
+     110   00:40A9  D3 99             >    out (#99),a
+     110   00:40AB  3E AD             >    ld a,register+128
+     110   00:40AD  D3 99             >    out (#99),a
+     110   00:40AF  FB                >    ei
+     111   00:40B0                      			
+     112   00:40B0                      
+     113   00:40B0  1E 00               			ld e,0
+     114   00:40B2  76                  2:			halt
+     115   00:40B3  3E 6A               			ld 		a,106
+     116   00:40B5                      			VDP_SetReg 38 	;	R38 = 106	; DY = 106		; first line on the screen
+     116   00:40B5  F3                >    di
+     116   00:40B6  D3 99             >    out (#99),a
+     116   00:40B8  3E A6             >    ld a,register+128
+     116   00:40BA  D3 99             >    out (#99),a
+     116   00:40BC  FB                >    ei
+     117   00:40BD  AF                  			xor     a 
+     118   00:40BE                      			VDP_SetReg 39 	;	R39 = 0
+     118   00:40BE  F3                >    di
+     118   00:40BF  D3 99             >    out (#99),a
+     118   00:40C1  3E A7             >    ld a,register+128
+     118   00:40C3  D3 99             >    out (#99),a
+     118   00:40C5  FB                >    ei
+     119   00:40C6                      
+     120   00:40C6  3E 01               			ld	a,1 
+     121   00:40C8                      			VDP_SetReg 35 	;	R35 = 1		; source page for ground
+     121   00:40C8  F3                >    di
+     121   00:40C9  D3 99             >    out (#99),a
+     121   00:40CB  3E A3             >    ld a,register+128
+     121   00:40CD  D3 99             >    out (#99),a
+     121   00:40CF  FB                >    ei
+     122   00:40D0                      
+     123   00:40D0  21 00 42            			ld hl,raster_tab
+     124   00:40D3  06 6A               			ld b,106
+     125   00:40D5                      			
+     126   00:40D5  CD 53 40            1:			call 	VDP_Ready
+     127   00:40D8  3E 01               			ld a,1
+     128   00:40DA                      			VDP_SetReg 42 	;	R42 = 1		; NYl = 1
+     128   00:40DA  F3                >    di
+     128   00:40DB  D3 99             >    out (#99),a
+     128   00:40DD  3E AA             >    ld a,register+128
+     128   00:40DF  D3 99             >    out (#99),a
+     128   00:40E1  FB                >    ei
+     129   00:40E2                      			
+     130   00:40E2  7E                  			ld a,(hl)
+     131   00:40E3  93                  			sub a,e
+     132   00:40E4  FE FF               			cp 255
+     133   00:40E6  20 01               			jr nz,3f
+     134   00:40E8  3C                  			inc a
+     135   00:40E9                      3:			VDP_SetReg 34 	;	R34 = source
+     135   00:40E9  F3                >    di
+     135   00:40EA  D3 99             >    out (#99),a
+     135   00:40EC  3E A2             >    ld a,register+128
+     135   00:40EE  D3 99             >    out (#99),a
+     135   00:40F0  FB                >    ei
+     136   00:40F1                      			
+     137   00:40F1  3E E0               			ld a,#E0
+     138   00:40F3                      			VDP_SetReg 46 	;	R46 = #E0		; execute YMMM command
+     138   00:40F3  F3                >    di
+     138   00:40F4  D3 99             >    out (#99),a
+     138   00:40F6  3E AE             >    ld a,register+128
+     138   00:40F8  D3 99             >    out (#99),a
+     138   00:40FA  FB                >    ei
+     139   00:40FB                      			
+     140   00:40FB  23                  			inc hl
+     141   00:40FC                      
+     142   00:40FC  10 D7               			djnz 1b
+     143   00:40FE  1C                  			inc e
+     144   00:40FF  C3 B2 40            			jp 2b
+     145   00:4102                      			
+     146   00:4102                      		
+     147   00:4102                      		
+     148   00:4102                      _START:  
+     149   00:4102  CD 1C 40            		call	screeninit
+     150   00:4105                      		
+     151   00:4105  11 00 00            		ld de,0
+     152   00:4108                      		
+     153   00:4108  76                  2:		halt              ; allow ISR
+     154   00:4109  F3                  		di
+     155   00:410A  7A                  		ld		a,d
+     156   00:410B  D3 99               		out    	(#99),a    
+     157   00:410D  3E 97               		ld		a,23 or 010000000b
+     158   00:410F  D3 99               		out    	(#99),a  	; scroll=0
+     159   00:4111                      				
+     160   00:4111  3E 1F                       ld		a,#1F           
+     161   00:4113  D3 99               		out    	(#99),a    
+     162   00:4115  3E 82               		ld		a,#82
+     163   00:4117  D3 99               		out    	(#99),a    ; set page 0
+     164   00:4119  FB                  		ei
+     165   00:411A  CD 21 41            		call   	raster_wave
+     166   00:411D                      		
+     167   00:411D  13                  		inc		de
+     168   00:411E  C3 08 41            		jp		2b    
+     169   00:4121                      ;S#2		
+     170   00:4121                      ;b6	VR: Vertical scanning line timing flag
+     171   00:4121                      ;		During vertical retrace and while lower and upper bordersare drawn, this flag is set to 1.
+     172   00:4121                      
+     173   00:4121                      ;b5	HR: Horizontal scanning line timing flag
+     174   00:4121                      ;		During horizontal retrace and while left and right borders are drawn, this flag is set to 1.
+     175   00:4121                             
+     176   00:4121                      raster_wave:   
+     177   00:4121  F3                  		di     
+     178   00:4122                      		
+     179   00:4122  3E 97               		ld     a,#97      
+     180   00:4124  D3 99               		out    (#99),a    
+     181   00:4126  3E 91               		ld     a,#91      
+     182   00:4128  D3 99               		out    (#99),a  	; write R#23 using port 0x9B and R#17
+     183   00:412A                      		
+     184   00:412A  3E 6A               		ld		a,106
+     185   00:412C  82                  		add		a,d
+     186   00:412D  D3 99               		out    	(#99),a    
+     187   00:412F  3E 93               		ld		a,19 or 010000000b
+     188   00:4131  D3 99               		out    	(#99),a  	; Set FH at line 106
+     189   00:4133                      
+     190   00:4133  3E 01               		ld     a,#01      
+     191   00:4135  D3 99                       out    (#99),a    
+     192   00:4137  3E 8F               		ld     a,#8f      
+     193   00:4139  D3 99               		out    (#99),a		; read S#1
+     194   00:413B                      
+     195   00:413B                      1:   						; wait for start of the line in R#19
+     196   00:413B  DB 99               		in a,(#99)
+     197   00:413D  0F                          rrca
+     198   00:413E  D2 3B 41                    jp nc,1b		
+     199   00:4141                      
+     200   00:4141  3E 3F                       ld		a,#3F           
+     201   00:4143  D3 99               		out    	(#99),a    
+     202   00:4145  3E 82               		ld		a,#82
+     203   00:4147  D3 99               		out    	(#99),a    ; set page 1
+     204   00:4149                      		
+     205   00:4149  3E 02               		ld     a,#02      
+     206   00:414B  D3 99                       out    (#99),a    
+     207   00:414D  3E 8F               		ld     a,#8f      
+     208   00:414F  D3 99               		out    (#99),a		; read S#2
+     209   00:4151                      		
+     210   00:4151                      
+     211   00:4151  21 00 42            		ld     	hl,raster_tab
+     212   00:4154  06 67               		ld		b,103
+     213   00:4156                      
+     214   00:4156                      .loop:
+     215   00:4156  7E                  		ld	a,(hl)
+     216   00:4157  93                  		sub	a,e
+     217   00:4158  23                  		inc	hl
+     218   00:4159  08                  		ex af,af'
+     219   00:415A                      		
+     220   00:415A  DB 99               1:   	in     a,(#99)     ; wait for HR start  the line
+     221   00:415C  CB 6F               		bit    5,a        
+     222   00:415E  CA 5A 41            		jp     z,1b   
+     223   00:4161                      		
+     224   00:4161  08                  		ex af,af'
+     225   00:4162  D3 9B               		out	(#9B),a
+     226   00:4164  10 F0               		djnz .loop        
+     227   00:4166                      		
+     228   00:4166  AF                  		xor    a          
+     229   00:4167  D3 99               		out    (#99),a    
+     230   00:4169  3E 8F               		ld     a,#8f      
+     231   00:416B  D3 99               		out    (#99),a    
+     232   00:416D  FB                  		ei                
+     233   00:416E  C9                  		ret
+     234   00:416F                      		
+     235   00:416F                                 
+     236   00:416F                      		code @ 4200h, # 256 
+     237   00:4200                      raster_tab:  
+     238   00:4200                      		repeat 256
+     239   00:4200                    < 		db (@#-256/(1+@#)) & 255
+     240   00:4200                    < 		endrepeat
+     240   00:4200  00 81 AD C3 D1 DB E2 E7 EC F0 F3 F6 F9 FB FD FF 
+     240   00:4210  01 03 05 07 08 0A 0B 0D 0E 10 11 12 14 15 16 17 
+     240   00:4220  19 1A 1B 1C 1E 1F 20 21 22 23 25 26 27 28 29 2A 
+     240   00:4230  2B 2C 2D 2F 30 31 32 33 34 35 36 37 38 39 3A 3B 
+     240   00:4240  3D 3E 3F 40 41 42 43 44 45 46 47 48 49 4A 4B 4C 
+     240   00:4250  4D 4E 4F 50 51 53 54 55 56 57 58 59 5A 5B 5C 5D 
+     240   00:4260  5E 5F 60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 
+     240   00:4270  6E 6F 70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 
+     240   00:4280  7F 80 81 82 83 84 85 86 87 88 89 8A 8B 8C 8D 8E 
+     240   00:4290  8F 90 91 92 93 94 95 96 97 98 99 9A 9B 9C 9D 9E 
+     240   00:42A0  9F A0 A1 A2 A3 A4 A5 A6 A7 A8 A9 AA AB AC AD AE 
+     240   00:42B0  AF B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 BA BB BC BD BE 
+     240   00:42C0  BF C0 C1 C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE 
+     240   00:42D0  CF D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 DA DB DC DD DE 
+     240   00:42E0  DF E0 E1 E2 E3 E4 E5 E6 E7 E8 E9 EA EB EC ED EE 
+     240   00:42F0  EF F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 FA FB FC FD FE 
+     241   00:4300                      end_raster_tab:
+     242   00:4300                      
+     243   00:4300  (01)                		page 1
+     244   01:6000                      
+     245   01:6000                      _opening:
+     246   01:6000  (2000)              		incbin "galaxy.bin",0x0000,0x2000
+     247   01:8000  (02)                		page 2
+     248   02:6000  (2000)              		incbin "galaxy.bin",0x2000,0x2000
+     249   02:8000  (03)                		page 3
+     250   03:6000  (2000)              		incbin "galaxy.bin",0x4000,0x2000
+     251   03:8000  (04)                		page 4
+     252   04:6000  (2000)              		incbin "galaxy.bin",0x6000,0x2000
+     253   04:8000  (05)                		page 5
+     254   05:6000  (2000)              		incbin "galaxy.bin",0x8000,0x2000
+     255   05:8000  (06)                		page 6
+     256   06:6000  (2000)              		incbin "galaxy.bin",0xA000,0x2000
+     257   06:8000  (07)                		page 7
+     258   07:6000  (2000)              		incbin "galaxy.bin",0xC000,0x2000
+     259   07:8000  (08)                		page 8
+     260   08:6000  (2000)              		incbin "galaxy.bin",0xE000,0x2000
+     261   08:8000  (09)                		page 9
+     262   09:6000  (2000)              		incbin "PLASMA.bin",0x0000,0x2000
+     263   09:8000  (0A)                		page 10
+     264   0A:6000  (2000)              		incbin "PLASMA.bin",0x2000,0x2000
+     265   0A:8000  (0B)                		page 11
+     266   0B:6000  (2000)              		incbin "PLASMA.bin",0x4000,0x2000
+     267   0B:8000  (0C)                		page 12
+     268   0C:6000  (2000)              		incbin "PLASMA.bin",0x6000,0x2000
+     269   0C:8000  (0D)                		page 13
+     270   0D:6000  (2000)              		incbin "PLASMA.bin",0x8000,0x2000
+     271   0D:8000  (0E)                		page 14
+     272   0E:6000  (2000)              		incbin "PLASMA.bin",0xA000,0x2000
+     273   0E:8000  (0F)                		page 15
+     274   0F:6000  (2000)              		incbin "PLASMA.bin",0xC000,0x2000
+     275   0F:8000  (10)                		page 16
+     276   10:6000  (2000)              		incbin "PLASMA.bin",0xE000,0x2000
+     277   10:8000                      		
+
+    LABELS
+-------------------------------------------------
+00:00005000   _kBank1
+00:00007000   _kBank2
+00:00009000   _kBank3
+00:0000B000   _kBank4
+00:0000401C   screeninit
+00:00004053   VDP_Ready
+00:0000406C   START
+00:0000406F X mode7YMMM
+00:00004102 X _START
+00:00004121   raster_wave
+00:00004156   raster_wave.loop
+00:00004200   raster_tab
+00:00004300 X end_raster_tab
+01:00006000   _opening
+
+
+ Output: TOTALBMP.out
+-------------------------------------------------
+
+ Page: 00
+  Org: 00004000  Size: *  Used: 00000000
+
+    No output
+
+ Output: TOTALBMP.ROM
+-------------------------------------------------
+
+ Page: 00
+  Org: 00004000  Size: 00002000  Used: 00000300
+
+   Address   Length Align   Label
+   00004000     367         screeninit
+   0000416F     145       <empty>
+   00004200     256     @   raster_tab
+   00004300    7424       <empty>
+
+ Page: 01
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         _opening
+
+ Page: 02
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 03
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 04
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 05
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 06
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 07
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 08
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 09
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 0A
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 0B
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 0C
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 0D
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 0E
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 0F
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 10
+  Org: 00006000  Size: 00002000  Used: 00002000
+
+   Address   Length Align   Label
+   00006000    8192         
+
+ Page: 11
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 12
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 13
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 14
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 15
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 16
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 17
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 18
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 19
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 1A
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 1B
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 1C
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 1D
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 1E
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>
+
+ Page: 1F
+  Org: 00006000  Size: 00002000  Used: 00000000
+
+   00006000    8192       <empty>

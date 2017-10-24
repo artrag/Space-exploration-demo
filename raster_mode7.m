@@ -23,7 +23,6 @@ fclose(fid);
 
 
 [A,MAP]= imread('mars-volcano.bmp');
-% A = [A(400:400+127,400:400+255,:);A(400+127:-1:400,400:400+255,:)];
 figure;
 image([A;A]);
 if any(size(MAP)==0)
@@ -53,5 +52,5 @@ end
 fclose(fid);
 
 
-!compila_ras.bat
+!compila_bmp.bat
 
