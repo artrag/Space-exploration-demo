@@ -15,6 +15,12 @@ _kBank4: 	equ 0B000h ;- B7FFh (B000h used)
 		
         org 4000h
         dw  4241h,START,0,0,0,0,0,0
+		
+		; make happy the map guessers
+		ld	(_kBank1),a
+		ld	(_kBank2),a
+		ld	(_kBank3),a
+		ld	(_kBank4),a
 
 screeninit:
 		ld		a,8
